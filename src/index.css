@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --text: #1e293b;
+  --text-h: #0f172a;
+  --bg: #f9f5ff;
+  --border: rgba(139, 92, 246, 0.18);
+  --code-bg: #f4ebff;
+  --accent: #7c3aed;
+  --accent-strong: #5b21b6;
+  --accent-soft: rgba(124, 58, 237, 0.14);
+  --secondary: #fb7185;
+  --secondary-soft: rgba(251, 113, 133, 0.16);
+  --shadow: rgba(15, 23, 42, 0.12) 0 24px 64px -32px;
+
+  --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --heading: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+  font: 18px/1.5 var(--sans);
+  letter-spacing: 0.02em;
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(251, 113, 133, 0.14), transparent 30%),
+    var(--bg);
+  color: var(--text);
+}
+
+#root {
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.gradient-panel {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(251, 113, 133, 0.12));
+}
+
+@media (max-width: 768px) {
+  body {
+    background: radial-gradient(circle at top center, rgba(124, 58, 237, 0.18), transparent 24%),
+      radial-gradient(circle at bottom center, rgba(251, 113, 133, 0.14), transparent 26%),
+      var(--bg);
+  }
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
