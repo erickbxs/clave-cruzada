@@ -25,6 +25,8 @@ export default function RoomPage() {
   const [secret, setSecret] = useState<PlayerSecret | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<"start" | "vote-start" | "vote-submit" | "vote-finish" | null>(null);
 
   const currentUid = getAuth().currentUser?.uid;
   const isHost = room?.hostUid === currentUid;
@@ -93,40 +95,43 @@ export default function RoomPage() {
 
   async function handleStartGame() {
     if (!roomId) return;
-    setLoading(true);
+    setActionError(null);
+    setActionLoading("start");
     try {
       await startGame(roomId);
     } catch (startError) {
       console.error(startError);
-      alert("Não foi possível iniciar o jogo. Verifique se há jogadores suficientes.");
+      setActionError("Não foi possível iniciar o jogo. Verifique se há jogadores suficientes.");
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   }
 
   async function handleStartVoting() {
     if (!roomId) return;
-    setLoading(true);
+    setActionError(null);
+    setActionLoading("vote-start");
     try {
       await startVoting(roomId);
     } catch (voteError) {
       console.error(voteError);
-      alert("Falha ao iniciar a votação.");
+      setActionError("Falha ao iniciar a votação.");
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   }
 
   async function handleFinishVoting() {
     if (!roomId) return;
-    setLoading(true);
+    setActionError(null);
+    setActionLoading("vote-finish");
     try {
       await finalizeVoting(roomId);
     } catch (finishError) {
       console.error(finishError);
-      alert("Falha ao revelar o resultado.");
+      setActionError("Falha ao revelar o resultado.");
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   }
 
@@ -181,7 +186,7 @@ export default function RoomPage() {
                 <li>3. Os papéis são distribuídos de forma segura.</li>
               </ul>
               {isHost ? (
-                <Button onClick={handleStartGame} disabled={players.length < 3 || loading}>
+                <Button onClick={handleStartGame} disabled={players.length < 3 || actionLoading !== null}>
                   {players.length < 3 ? "Aguardando mais jogadores" : "Iniciar partida"}
                 </Button>
               ) : (
@@ -253,7 +258,7 @@ export default function RoomPage() {
                 Total de jogadores: <span className="font-semibold text-slate-900">{players.length}</span>
               </p>
               {isHost ? (
-                <Button onClick={handleStartVoting} disabled={loading}>
+                <Button onClick={handleStartVoting} disabled={actionLoading !== null}>
                   Ir para votação
                 </Button>
               ) : (
@@ -294,16 +299,22 @@ export default function RoomPage() {
                 variant={secret?.voteForUid === player.uid ? "primary" : "secondary"}
                 onClick={async () => {
                   if (!roomId) return;
-                  setLoading(true);
+                  setActionError(null);
+                  setActionLoading("vote-submit");
                   try {
                     await submitVote(roomId, player.uid);
                   } catch (voteError) {
                     console.error(voteError);
-                    alert("Falha ao registrar o voto. Tente novamente.");
+                    setActionError(
+                      voteError instanceof Error
+                        ? voteError.message
+                        : "Falha ao registrar o voto. Tente novamente."
+                    );
                   } finally {
-                    setLoading(false);
+                    setActionLoading(null);
                   }
                 }}
+                disabled={actionLoading !== null}
               >
                 Votar
               </Button>
@@ -316,7 +327,7 @@ export default function RoomPage() {
             <p className="text-sm text-slate-600">
               Use o botão abaixo para revelar o resultado depois que todos votarem.
             </p>
-            <Button onClick={handleFinishVoting} disabled={loading}>
+            <Button onClick={handleFinishVoting} disabled={actionLoading !== null}>
               Revelar resultado
             </Button>
           </div>
@@ -391,6 +402,11 @@ export default function RoomPage() {
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 text-slate-900">
       <div className="mx-auto max-w-5xl">
+        {actionError ? (
+          <div className="mb-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {actionError}
+          </div>
+        ) : null}
         {stage === "lobby" && renderLobby()}
         {stage === "discussion" && renderDiscussion()}
         {stage === "voting" && renderVoting()}
