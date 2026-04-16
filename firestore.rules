@@ -19,14 +19,14 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.auth.uid == playerId && request.resource.data.uid == playerId;
         allow read: if isAuthenticated();
         allow update: if isAuthenticated() && request.auth.uid == playerId && request.resource.data.uid == playerId;
-        allow delete: if false;
+        allow delete: if isAuthenticated() && request.auth.uid == playerId;
       }
 
       match /playerSecrets/{playerId} {
         allow create: if isRoomHost(roomId);
         allow read: if isAuthenticated() && (request.auth.uid == playerId || isRoomHost(roomId));
         allow update: if isAuthenticated() && request.auth.uid == playerId;
-        allow delete: if false;
+        allow delete: if isAuthenticated() && request.auth.uid == playerId;
       }
     }
   }

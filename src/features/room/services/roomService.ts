@@ -10,7 +10,6 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
-  updateDoc,
   where,
 } from "firebase/firestore";
 import { getFirestoreInstance } from "@/services/firebase/firestore";
@@ -114,11 +113,13 @@ export async function joinRoom(code: string, nickname: string) {
     throw new Error("A partida já começou. Não é possível entrar agora.");
   }
 
-  await setDoc(doc(getPlayersCollection(roomId), user.uid), buildPublicPlayer(user.uid, nickname, false));
-  await updateDoc(getRoomDoc(roomId), {
-    playerCount: room.playerCount + 1,
-    updatedAt: serverTimestamp(),
-  });
+  const playerRef = doc(getPlayersCollection(roomId), user.uid);
+  const existingPlayer = await getDoc(playerRef);
+
+  await setDoc(playerRef, buildPublicPlayer(user.uid, nickname, false), { merge: true });
+  if (existingPlayer.exists()) {
+    return { roomId };
+  }
 
   return { roomId };
 }
@@ -235,9 +236,17 @@ export async function submitVote(roomId: string, voteForUid: string) {
   }
 
   const secretRef = doc(getPlayerSecretsCollection(roomId), user.uid);
+  const targetSecretRef = doc(getPlayerSecretsCollection(roomId), voteForUid);
   const secretSnapshot = await getDoc(secretRef);
+  const targetSecretSnapshot = await getDoc(targetSecretRef);
   if (!secretSnapshot.exists()) {
     throw new Error("Dados de jogador não encontrados.");
+  }
+  if (!targetSecretSnapshot.exists()) {
+    throw new Error("Jogador alvo não encontrado.");
+  }
+  if (voteForUid === user.uid) {
+    throw new Error("Você não pode votar em si mesmo.");
   }
 
   await setDoc(
@@ -285,12 +294,10 @@ export async function finalizeVoting(roomId: string) {
       return acc;
     }, {});
 
-    const selectedUid = Object.keys(votes).reduce<string | null>((best, uid) => {
-      if (!best || votes[uid] > votes[best]) {
-        return uid;
-      }
-      return best;
-    }, null);
+    const voteEntries = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+    const highestVoteCount = voteEntries[0]?.[1] ?? 0;
+    const tiedTop = voteEntries.filter(([, count]) => count === highestVoteCount);
+    const selectedUid = tiedTop.length === 1 ? tiedTop[0][0] : null;
 
     const infiltrator = secretsSnapshot.docs.find((snapshot) => (snapshot.data() as PlayerSecret).role === "infiltrator");
     const result = selectedUid && infiltrator?.id === selectedUid ? "agents" : selectedUid ? "infiltrator" : "draw";
@@ -312,6 +319,8 @@ export async function leaveRoom(roomId: string) {
     return;
   }
 
-  await deleteDoc(doc(getPlayersCollection(roomId), user.uid));
-  await deleteDoc(doc(getPlayerSecretsCollection(roomId), user.uid));
+  await Promise.all([
+    deleteDoc(doc(getPlayersCollection(roomId), user.uid)).catch(() => undefined),
+    deleteDoc(doc(getPlayerSecretsCollection(roomId), user.uid)).catch(() => undefined),
+  ]);
 }

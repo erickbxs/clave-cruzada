@@ -7,28 +7,34 @@ import { createRoom, joinRoom } from "@/features/room/services/roomService";
 export default function HomePage() {
   const [nickname, setNickname] = useState("");
   const [roomCode, setRoomCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<"create" | "join" | null>(null);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isLoading = loadingAction !== null;
 
   async function handleCreateRoom() {
     const trimmedName = nickname.trim();
     if (!trimmedName) {
-      alert("Informe um nome para começar a sala.");
+      setError("Informe um nome para começar a sala.");
       return;
     }
 
+    setError(null);
+    setFeedback(null);
     try {
-      setLoading(true);
+      setLoadingAction("create");
       const { code } = await createRoom(trimmedName);
       setCreatedCode(code);
       setRoomCode(code);
+      setFeedback("Sala criada! Redirecionando...");
       navigate(`/room/${code}`);
     } catch (error) {
       console.error(error);
-      alert("Não foi possível criar a sala. Tente novamente.");
+      setError("Não foi possível criar a sala. Tente novamente.");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -37,34 +43,48 @@ export default function HomePage() {
     const trimmedCode = roomCode.trim().toUpperCase();
 
     if (!trimmedName) {
-      alert("Informe um nome antes de entrar na sala.");
+      setError("Informe um nome antes de entrar na sala.");
       return;
     }
 
     if (!trimmedCode) {
-      alert("Informe o código da sala para entrar.");
+      setError("Informe o código da sala para entrar.");
       return;
     }
 
+    setError(null);
+    setFeedback(null);
     try {
-      setLoading(true);
+      setLoadingAction("join");
       await joinRoom(trimmedCode, trimmedName);
+      setFeedback("Entrada confirmada! Redirecionando...");
       navigate(`/room/${trimmedCode}`);
     } catch (error) {
       console.error(error);
-      alert(
+      setError(
         error instanceof Error
           ? error.message
           : "Não foi possível entrar na sala. Verifique o código."
       );
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
   return (
     <main className="min-h-screen px-4 py-10 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-8">
+        {error ? (
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+        {feedback ? (
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {feedback}
+          </div>
+        ) : null}
+
         <section className="glass-card overflow-hidden rounded-[36px] border border-white/70 p-8 shadow-[0_20px_80px_-42px_rgba(124,58,237,0.75)]">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl space-y-6">
@@ -77,8 +97,8 @@ export default function HomePage() {
                 descubra o infiltrado antes que o tempo acabe.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button onClick={handleCreateRoom} disabled={loading}>
-                  {loading ? "Preparando sala..." : "Criar sala agora"}
+                <Button onClick={handleCreateRoom} disabled={isLoading}>
+                  {loadingAction === "create" ? "Preparando sala..." : "Criar sala agora"}
                 </Button>
                 <Button variant="secondary" onClick={() => navigate("/local")}>Testar modo local</Button>
               </div>
@@ -103,18 +123,18 @@ export default function HomePage() {
                 value={nickname}
                 onChange={(event) => setNickname(event.target.value)}
                 placeholder="Ex: Laura"
-                disabled={loading}
+                disabled={isLoading}
               />
               <Input
                 label="Código da sala"
                 value={roomCode}
                 onChange={(event) => setRoomCode(event.target.value)}
                 placeholder="AB123"
-                disabled={loading}
+                disabled={isLoading}
                 className="uppercase tracking-[0.2em]"
               />
-              <Button variant="secondary" onClick={handleJoinRoom} disabled={loading}>
-                {loading ? "Entrando..." : "Entrar na sala"}
+              <Button variant="secondary" onClick={handleJoinRoom} disabled={isLoading}>
+                {loadingAction === "join" ? "Entrando..." : "Entrar na sala"}
               </Button>
             </div>
           </div>
